@@ -40,15 +40,14 @@ public class ReflectionUtils {
     public static <T> T invokeGetter(Object bean, String attribute, boolean fail) {
         try {
             return (T) (new Mirror()).on(bean).get().field(attribute);
-            //return (T) getPropertyUtilsBean().getProperty(bean, attribute);
         }catch (Exception e) {
 
-            return tryToInvokeGetterByMethodRefence(bean,attribute,fail);
+            return tryToInvokeGetterByMethodReference(bean,attribute,fail);
 
         }
     }
 
-    private static <T> T tryToInvokeGetterByMethodRefence(Object bean, String attribute, boolean fail) {
+    private static <T> T tryToInvokeGetterByMethodReference(Object bean, String attribute, boolean fail) {
         Method getter = getCorrespondentAccessorMethod(bean.getClass().getMethods(),attribute,Accessor.GETTER);
         if (getter == null) {
             if (fail) {
