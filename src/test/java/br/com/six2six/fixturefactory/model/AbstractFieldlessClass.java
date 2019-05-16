@@ -1,12 +1,12 @@
-package br.com.six2six.fieldslessclasses;
+package br.com.six2six.fixturefactory.model;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractModelLike {
+public abstract class AbstractFieldlessClass {
     protected Map<String,Object> attributes;
 
-    public AbstractModelLike() {
+    public AbstractFieldlessClass() {
         attributes = new HashMap<>();
     }
 }

@@ -39,16 +39,29 @@ public class ReflectionUtils {
     @SuppressWarnings("unchecked")
     public static <T> T invokeGetter(Object bean, String attribute, boolean fail) {
         try {
-            return (T) getPropertyUtilsBean().getProperty(bean, attribute);
+            return (T) (new Mirror()).on(bean).get().field(attribute);
+            //return (T) getPropertyUtilsBean().getProperty(bean, attribute);
         }catch (Exception e) {
-            if (fail) {
-                throw new IllegalArgumentException("Error invoking get method for " + attribute);   
-            } else {
-                return null;
-            }
+
+            return tryToInvokeGetterByMethodRefence(bean,attribute,fail);
+
         }
     }
-    
+
+    private static <T> T tryToInvokeGetterByMethodRefence(Object bean, String attribute, boolean fail) {
+        Method getter = getCorrespondentAccessorMethod(bean.getClass().getMethods(),attribute,Accessor.GETTER);
+        if (getter == null) {
+            if (fail) {
+                throw new IllegalArgumentException("Error invoking get method for " + attribute);
+            }
+        }
+        try {
+            return (T) getter.invoke(bean);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalArgumentException("Error invoking get method for " + attribute);
+        }
+    }
+
     public static Object invokeRecursiveGetter(Object bean, String objectsPath) {
         Object lastValue = null;
         Object lastBean = bean;
@@ -72,11 +85,14 @@ public class ReflectionUtils {
 
     private static void tryToInvokeSetterByMethodReference(Object bean, String attribute, Object value, boolean fail) {
         Method setterMethod = getCorrespondentAccessorMethod(bean.getClass().getMethods(), attribute, Accessor.SETTER);
-        if (setterMethod == null) {
-            if(fail) {
-                throw new IllegalArgumentException(String.format(NO_SUCH_ATTRIBUTE_MESSAGE, bean.getClass().getName(), attribute, value.getClass().getName()));
-            }
+        if (setterMethod == null && fail) {
+            throw new IllegalArgumentException(String.format(NO_SUCH_ATTRIBUTE_MESSAGE, bean.getClass().getName(), attribute, value.getClass().getName()));
         }
+
+        invokeSetterMethod(bean, attribute, value, setterMethod);
+    }
+
+    private static void invokeSetterMethod(Object bean, String attribute, Object value, Method setterMethod) {
         try {
             setterMethod.invoke(bean,value);
         } catch (IllegalAccessException | InvocationTargetException ex) {
@@ -97,12 +113,13 @@ public class ReflectionUtils {
     }
 
     public static Class<?> invokeRecursiveField(Class<?> clazz, String attribute) {
-        Field field = null;
+        Field field;
         Class<?> targetBeanClass = getTargetClass(clazz);
         Class<?> fieldType = null;
         for (String propertyItem : attribute.split("\\.")) {
             field = new Mirror().on(targetBeanClass).reflect().field(propertyItem);
-            fieldType = tryToResolveFieldType(field,clazz,attribute);
+            fieldType = tryToResolveFieldType(field, clazz, propertyItem);
+            targetBeanClass = fieldType;
         }
 
         return fieldType;
@@ -118,7 +135,7 @@ public class ReflectionUtils {
 
     private static Class<?> resolveTypeByGetterAccessor(Class<?> clazz, String attribute) {
         Method[] classMethods = clazz.getMethods();
-        Method correspondentGetter = getCorrespondentAccessorMethod(classMethods, attribute,Accessor.GETTER);
+        Method correspondentGetter = getCorrespondentAccessorMethod(classMethods, attribute, Accessor.GETTER);
 
         if (correspondentGetter == null) {
             throw new IllegalArgumentException(String.format("%s-> Field %s doesn't exists", clazz.getName(), attribute));
@@ -129,13 +146,13 @@ public class ReflectionUtils {
 
     private static Method getCorrespondentAccessorMethod(Method[] classMethods, String attribute, Accessor typeAccessor) {
         return Arrays.stream(classMethods)
-                                           .filter(m -> m.getName().toLowerCase().equals(buildAcessorName(attribute,typeAccessor)))
-                                           .findFirst()
-                                           .orElse(null);
+                     .filter(m -> m.getName().equalsIgnoreCase(buildAcessorName(attribute,typeAccessor)))
+                     .findFirst()
+                     .orElse(null);
     }
 
     private static String buildAcessorName(String attribute,Accessor typeAccessor) {
-        return typeAccessor.getCode().concat(attribute).toLowerCase();
+        return typeAccessor.getCode().concat(attribute);
     }
 
     @SuppressWarnings("unchecked")

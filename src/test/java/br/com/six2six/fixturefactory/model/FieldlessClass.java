@@ -1,10 +1,10 @@
-package br.com.six2six.fieldslessclasses;
+package br.com.six2six.fixturefactory.model;
 
-public class ModelLike extends AbstractModelLike {
+public class FieldlessClass extends AbstractFieldlessClass {
 
     private static final String CODE = "code";
     private static final String NUMBER = "number";
-    private Boolean aBoolean;
+    private static final String DEPENDENCY = "dependency";
 
     public String getCode() {
         return (String) this.attributes.get(CODE);
@@ -22,12 +22,12 @@ public class ModelLike extends AbstractModelLike {
         this.attributes.put(NUMBER,number);
     }
 
-    public Boolean getaBoolean() {
-        return aBoolean;
+    public FieldlessDependencyClass getDependency() {
+        return (FieldlessDependencyClass) this.attributes.get(DEPENDENCY);
     }
 
-    public void setaBoolean(Boolean aBoolean) {
-        this.aBoolean = aBoolean;
+    public void setDependency(FieldlessDependencyClass dependency) {
+        this.attributes.put(DEPENDENCY,dependency);
     }
 }
 
